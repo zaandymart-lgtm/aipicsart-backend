@@ -1,6 +1,13 @@
 import { IncomingForm } from 'formidable';
 import { v2 as cloudinary } from 'cloudinary';
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://aipicsart.com',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
 export const config = {
   api: {
     bodyParser: false,
@@ -8,6 +15,18 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders);
+    res.end();
+    return;
+  }
+
+  // Set CORS headers for all responses
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
