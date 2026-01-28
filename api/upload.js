@@ -1,6 +1,13 @@
 import { IncomingForm } from 'formidable';
 import { v2 as cloudinary } from 'cloudinary';
 
+// CONFIGURACIÓN DE CLOUDINARY - ¡AÑADE ESTO!
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://aipicsart.com',
@@ -21,7 +28,7 @@ export default async function handler(req, res) {
     res.end();
     return;
   }
-
+  
   // Set CORS headers for all responses
   Object.entries(corsHeaders).forEach(([key, value]) => {
     res.setHeader(key, value);
@@ -44,6 +51,16 @@ export default async function handler(req, res) {
     });
 
     const photos = files.photos || [];
+    
+    // Verificar si hay fotos
+    if (photos.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No photos uploaded',
+        details: 'Please select at least one photo'
+      });
+    }
+
     const uploadedUrls = [];
 
     // Upload each photo to Cloudinary
@@ -67,9 +84,18 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Upload error:', error);
+    
+    // Mejores mensajes de error
+    let errorMessage = 'Failed to upload photos';
+    if (error.message.includes('CLOUDINARY')) {
+      errorMessage = 'Cloudinary configuration error';
+    } else if (error.message.includes('file size')) {
+      errorMessage = 'File too large';
+    }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to upload photos',
+      error: errorMessage,
       details: error.message
     });
   }
